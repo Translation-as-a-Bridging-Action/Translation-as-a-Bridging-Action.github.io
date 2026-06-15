@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Translation as a Bridging Action: Transferring Manipulation Skills from Humans to Robots</title>
+    <meta name="description" content="A bridging action representation based on relative wrist translation that transfers human manipulation skills to bi-manual robots.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="static/css/style.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-inner">
+            <div class="nav-links">
+                <a href="#abstract">Abstract</a>
+                <a href="#demos">Demos</a>
+                <a href="#bridge">Bridging Action</a>
+                <a href="#method">Method</a>
+                <a href="#results">Results</a>
+            </div>
+        </div>
+    </nav>
+
+    <header id="top" class="hero">
+        <div class="container">
+            <p class="venue">Technical Report</p>
+            <h1 class="title">Translation as a Bridging Action:<br>Transferring Manipulation Skills from Humans to Robots</h1>
+
+            <div class="authors">
+                <span class="author"><a href="https://ch3cook-fdu.github.io/" target="_blank" rel="noopener">Sijin Chen</a><sup>1,2,&#42;</sup></span>,
+                <span class="author">Kaixuan Jiang<sup>2,&#42;</sup></span>,
+                <span class="author">Haixin Shi<sup>2,&#8224;,&#8225;</sup></span>,
+                <span class="author">Yanhui Wang<sup>2</sup></span>,
+                <span class="author">Weiheng Zhong<sup>2</sup></span>,
+                <span class="author">Haosheng Li<sup>2</sup></span>,
+                <span class="author">Bo Jiang<sup>2</sup></span>,
+                <span class="author">Yuxiao Liu<sup>2</sup></span>,
+                <span class="author"><a href="https://xh-liu.github.io/" target="_blank" rel="noopener">Xihui Liu</a><sup>1,&#8225;</sup></span>
+            </div>
+            <div class="affiliations">
+                <span><sup>1</sup>HKU-MMLab</span>
+                <span class="aff-sep">·</span>
+                <span><sup>2</sup>ByteDance Seed</span>
+            </div>
+            <div class="author-notes">
+                <span><sup>&#42;</sup>Equal Contribution</span>
+                <span class="aff-sep">·</span>
+                <span><sup>&#8224;</sup>Project Lead</span>
+                <span class="aff-sep">·</span>
+                <span><sup>&#8225;</sup>Corresponding Author</span>
+            </div>
+
+            <div class="btn-row">
+                <a class="btn" href="#" target="_blank" rel="noopener">
+                    <span class="btn-ico">&#128196;</span> Paper
+                </a>
+                <a class="btn" href="#" target="_blank" rel="noopener">
+                    <span class="btn-ico">&#128640;</span> arXiv
+                </a>
+                <a class="btn" href="#" target="_blank" rel="noopener">
+                    <span class="btn-ico">&#60;/&#62;</span> Code
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <section class="teaser-section">
+        <div class="container">
+            <figure class="figure">
+                <img src="static/images/teaser.png" alt="Overview of translation-only skill transfer">
+                <figcaption>
+                    <b>Overview.</b> We study how to learn novel bi-manual robot skills from human motion data by using
+                    <b>relative wrist translation</b> as the action component shared across human and robot embodiments.
+                </figcaption>
+            </figure>
+        </div>
+    </section>
+
+    <section id="abstract" class="section">
+        <div class="container narrow">
+            <h2 class="section-title">Abstract</h2>
+            <p class="lead">
+                We study whether we can learn novel manipulation skills from human actions to a bi-manual robot with parallel
+                grippers. Prior practices treat humans as another bi-manual 6DoF embodiment; however, they face two challenges:
+                hand-pose estimations are noisy, and the contact patterns of human fingers differ fundamentally from those of a
+                parallel gripper, making wrist rotation semantically misaligned with robot manipulation. We therefore propose a
+                <b>bridging action representation</b>, i.e., the relative wrist translation within the initial head-camera frame,
+                which is shared between humans and robots, to enable human to robot manipulation knowledge transfer. To handle the
+                potential absence of certain action components for different types of embodiments, we build a &pi;<sub>0</sub>-like
+                vision-language-action model with <b>interleaved action tokens</b>. On novel bi-manual manipulation tasks, we show
+                that our proposed bridging action can effectively transfer human manipulation knowledge to robots, <b>scale with
+                human action data</b>, and achieve non-zero success rates on certain tasks even without task-specific robot
+                demonstrations.
+            </p>
+            <div class="keywords">
+                <span class="chip">Imitation Learning</span>
+                <span class="chip">Ego-Centric</span>
+                <span class="chip">Generalization</span>
+                <span class="chip">Cross-Embodiment</span>
+            </div>
+        </div>
+    </section>
+
+    <section id="method" class="section">
+        <div class="container">
+            <h2 class="section-title">Method</h2>
+            <p class="section-sub narrow-block">
+                We train a vision-language-action policy on human action data and robot tele-operation data with different
+                available action components. Instead of using 6DoF wrist actions for human data, we adopt <b>only the wrist
+                translation</b>, defined over a chunk of <span class="mono">k = 30</span> future steps.
+            </p>
+
+            <figure class="figure method-figure">
+                <img src="static/images/pipelinev6.png" alt="Architecture overview">
+                <figcaption>
+                    <b>Architecture Overview.</b> (a) We train on a mixture of human and robot action data.
+                    (b) Learning from 6DoF human action is challenging because of differing contact patterns and noisy hand-pose
+                    estimations. (c) We adopt a &pi;<sub>0</sub>-like vision-language-action model with interleaved action
+                    sequences to handle missing action components across human and robot data sources.
+                </figcaption>
+            </figure>
+
+            <h3 class="sub-title">Per-embodiment action supervision</h3>
+            <p class="section-sub narrow-block">Each data source supervises only the action components that can be reliably extracted.</p>
+            <div class="table-wrap narrow-block">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Data source</th>
+                            <th>a<sup>3D-wrist</sup></th>
+                            <th>a<sup>6D-eef</sup></th>
+                            <th>a<sup>gripper</sup></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>In-the-wild human (EgoDex + out-sourced)</td>
+                            <td class="yes">&#10003;</td><td class="no">&ndash;</td><td class="no">&ndash;</td>
+                        </tr>
+                        <tr>
+                            <td>In-lab human action data</td>
+                            <td class="yes">&#10003;</td><td class="no">&ndash;</td><td class="yes">&#10003;</td>
+                        </tr>
+                        <tr>
+                            <td>Robot tele-operation</td>
+                            <td class="yes">&#10003;</td><td class="yes">&#10003;</td><td class="yes">&#10003;</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+        </div>
+    </section>
+
+    <section id="results" class="section section-alt">
+        <div class="container">
+            <h2 class="section-title">Results</h2>
+            <p class="section-sub narrow-block">
+                We conduct extensive real-world experiments on the ByteMini bi-manual robot to answer:
+                is the bridging representation <b>helpful</b> and <b>scalable</b> for transferable robot skills?
+            </p>
+
+            <figure class="figure">
+                <img src="static/images/main_results.png" alt="Main results">
+                <figcaption>
+                    <b>Main results.</b> Human action co-training and large-scale human-only pre-training improve real-robot
+                    progress and success rates across the 15 evaluation tasks.
+                </figcaption>
+            </figure>
+
+            <div class="findings">
+                <div class="finding">
+                    <h3>Finding I &mdash; Transfer beyond pick-and-place</h3>
+                    <p>Training only on pick-and-place data achieves much lower task progress and success rate, showing that
+                       generalized PnP data alone is insufficient for the evaluation tasks.</p>
+                </div>
+                <div class="finding">
+                    <h3>Finding II &mdash; Scales with pre-training</h3>
+                    <p>Pre-training on large-scale human actions with <span class="mono">a<sup>3D-wrist</sup></span> yields
+                       substantial improvements, indicating the scalability and effectiveness of the bridging action.</p>
+                </div>
+            </div>
+
+            <h3 class="sub-title">Why not 6DoF human wrist actions?</h3>
+            <div class="split">
+                <div class="split-text">
+                    <p>The mainstream practice extracts relative 6DoF wrist actions, treating humans as another robotic embodiment.
+                       We compare this baseline with our bridging action, both trained from scratch. Our representation
+                       <b>consistently outperforms</b> the 6DoF baseline, which produces distorted, off-target wrist poses.</p>
+                    <div class="table-wrap">
+                        <table class="data-table compact">
+                            <thead>
+                                <tr><th>Human Actions</th><th>Overall Prog. (%)</th><th>Overall Succ. (%)</th></tr>
+                            </thead>
+                            <tbody>
+                                <tr><td>a<sup>6D-eef</sup></td><td>34.67</td><td>12.50</td></tr>
+                                <tr class="highlight"><td>a<sup>3D-wrist</sup> (Ours)</td><td><b>44.58</b></td><td><b>22.50</b></td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <figure class="figure split-fig">
+                    <img src="static/images/rollout_compare.png" alt="Qualitative rollout comparison">
+                    <figcaption><b>Qualitative comparison.</b> 6DoF wrist supervision (left) yields a distorted, off-target wrist
+                        pose; our bridging actions (right) yield a natural pose aligned with the handle.</figcaption>
+                </figure>
+            </div>
+        </div>
+    </section>
+
+    <section id="demos" class="section">
+        <div class="container">
+            <h2 class="section-title">Video Demos</h2>
+            <p class="section-sub narrow-block">
+                Across 15 manipulation tasks, the robot reproduces behaviors learned from human demonstrations under the
+                same language instructions in 10-shot rollouts, using only 10 task-specific robot episodes per task.
+            </p>
+            <div class="transfer-flow" aria-label="Human-to-robot transfer flow">
+                <span>Human action video</span>
+                <span class="transfer-arrow">&rarr;</span>
+                <span>Shared 3D wrist translation in head-camera coordinates</span>
+                <span class="transfer-arrow">&rarr;</span>
+                <span>Robot skill rollout</span>
+            </div>
+
+            <div class="carousel">
+                <button class="carousel-btn prev" id="vidPrev" aria-label="Previous">&#8249;</button>
+                <button class="carousel-btn next" id="vidNext" aria-label="Next">&#8250;</button>
+                <div class="video-track" id="videoTrack">
+                    <figure class="video-card video-pair-card">
+                        <div class="video-pair">
+                            <div class="video-demo">
+                                <div class="video-label">Human demonstration</div>
+                                <video controls muted playsinline preload="metadata">
+                                    <source src="mp4_hand/Open_the_microwave_door.mp4" type="video/mp4">
+                                </video>
+                            </div>
+                            <div class="video-demo">
+                                <div class="video-label">Robot rollout</div>
+                                <video controls muted playsinline preload="metadata">
+                                    <source src="mp4/Open_the_microwave_door.mp4" type="video/mp4">
+                                </video>
+                            </div>
+                        </div>
+                        <figcaption><span class="task-index">Task 1</span> Open the microwave door</figcaption>
+                    </figure>
+                    <figure class="video-card video-pair-card">
+                        <div class="video-pair">
+                            <div class="video-demo">
+                                <div class="video-label">Human demonstration</div>
+                                <video controls muted playsinline preload="metadata">
+                                    <source src="mp4_hand/Close_the_microwave_door.mp4" type="video/mp4">
+                                </video>
+                            </div>
+                            <div class="video-demo">
+                                <div class="video-label">Robot rollout</div>
+                                <video controls muted playsinline preload="metadata">
+                                    <source src="mp4/Close_the_microwave_door.mp4" type="video/mp4">
+                                </video>
+                            </div>
+                        </div>
+                        <figcaption><span class="task-index">Task 2</span> Close the microwave door</figcaption>
+                    </figure>
+                    <figure class="video-card video-pair-card">
+                        <div class="video-pair">
+                            <div class="video-demo">
+                                <div class="video-label">Human demonstration</div>
+                                <video controls muted playsinline preload="metadata">
+                                    <source src="mp4_hand/Take_the_bowl_out_of_the_microwave.mp4" type="video/mp4">
+                                </video>
+                            </div>
+                            <div class="video-demo">
+                                <div class="video-label">Robot rollout</div>
+                                <video controls muted playsinline preload="metadata">
+                                    <source src="mp4/Take_the_bowl_out_of_the_microwave.mp4" type="video/mp4">
+                                </video>
+                            </div>
+                        </div>
+                        <figcaption><span class="task-index">Task 3</span> Take the bowl out of the microwave</figcaption>
+                    </figure>
+                    <figure class="video-card video-pair-card">
+                        <div class="video-pair">
+                            <div class="video-demo">
+                                <div class="video-label">Human demonstration</div>
+                                <video controls muted playsinline preload="metadata">
+                                    <source src="mp4_hand/Place_the_bowl_into_the_microwave.mp4" type="video/mp4">
+                                </video>
+                            </div>
+                            <div class="video-demo">
+                                <div class="video-label">Robot rollout</div>
+                                <video controls muted playsinline preload="metadata">
+                                    <source src="mp4/Place_the_bowl_into_the_microwave.mp4" type="video/mp4">
+                                </video>
+                            </div>
+                        </div>
+                        <figcaption><span class="task-index">Task 4</span> Place the bowl into the microwave</figcaption>
+                    </figure>
+                    <figure class="video-card video-pair-card">
+                        <div class="video-pair">
+                            <div class="video-demo">
+                                <div class="video-label">Human demonstration</div>
+                                <video controls muted playsinline preload="metadata">
+                                    <source src="mp4_hand/Wipe_the_microwave_top_from_left_to_right.mp4" type="video/mp4">
+                                </video>
+                            </div>
+                            <div class="video-demo">
+                                <div class="video-label">Robot rollout</div>
+                                <video controls muted playsinline preload="metadata">
+                                    <source src="mp4/Wipe_the_microwave_top_from_left_to_right.mp4" type="video/mp4">
+                                </video>
+                            </div>
+                        </div>
+                        <figcaption><span class="task-index">Task 5</span> Wipe the microwave top from left to right</figcaption>
+                    </figure>
+                    <figure class="video-card video-pair-card">
+                        <div class="video-pair">
+                            <div class="video-demo">
+                                <div class="video-label">Human demonstration</div>
+                                <video controls muted playsinline preload="metadata">
+                                    <source src="mp4_hand/Wipe_the_microwave_top_from_right_to_left.mp4" type="video/mp4">
+                                </video>
+                            </div>
+                            <div class="video-demo">
+                                <div class="video-label">Robot rollout</div>
+                                <video controls muted playsinline preload="metadata">
+                                    <source src="mp4/Wipe_the_microwave_top_from_right_to_left.mp4" type="video/mp4">
+                                </video>
+                            </div>
+                        </div>
+                        <figcaption><span class="task-index">Task 6</span> Wipe the microwave top from right to left</figcaption>
+                    </figure>
+                    <figure class="video-card video-pair-card">
+                        <div class="video-pair">
+                            <div class="video-demo">
+                                <div class="video-label">Human demonstration</div>
+                                <video controls muted playsinline preload="metadata">
+                                    <source src="mp4_hand/Open_the_drawer.mp4" type="video/mp4">
+                                </video>
+                            </div>
+                            <div class="video-demo">
+                                <div class="video-label">Robot rollout</div>
+                                <video controls muted playsinline preload="metadata">
+                                    <source src="mp4/Open_the_drawer.mp4" type="video/mp4">
+                                </video>
+                            </div>
+                        </div>
+                        <figcaption><span class="task-index">Task 7</span> Open the drawer</figcaption>
+                    </figure>
+                    <figure class="video-card video-pair-card">
+                        <div class="video-pair">
+                            <div class="video-demo">
+                                <div class="video-label">Human demonstration</div>
+                                <video controls muted playsinline preload="metadata">
+                                    <source src="mp4_hand/Close_the_drawer.mp4" type="video/mp4">
+                                </video>
+                            </div>
+                            <div class="video-demo">
+                                <div class="video-label">Robot rollout</div>
+                                <video controls muted playsinline preload="metadata">
+                                    <source src="mp4/Close_the_drawer.mp4" type="video/mp4">
+                                </video>
+                            </div>
+                        </div>
+                        <figcaption><span class="task-index">Task 8</span> Close the drawer</figcaption>
+                    </figure>
+                    <figure class="video-card video-pair-card">
+                        <div class="video-pair">
+                            <div class="video-demo">
+                                <div class="video-label">Human demonstration</div>
+                                <video controls muted playsinline preload="metadata">
+                                    <source src="mp4_hand/Hang_the_left_mug_on_the_mug_holder.mp4" type="video/mp4">
+                                </video>
+                            </div>
+                            <div class="video-demo">
+                                <div class="video-label">Robot rollout</div>
+                                <video controls muted playsinline preload="metadata">
+                                    <source src="mp4/Hang_the_left_mug_on_the_mug_holder.mp4" type="video/mp4">
+                                </video>
+                            </div>
+                        </div>
+                        <figcaption><span class="task-index">Task 9</span> Hang the left mug on the mug holder</figcaption>
+                    </figure>
+                    <figure class="video-card video-pair-card">
+                        <div class="video-pair">
+                            <div class="video-demo">
+                                <div class="video-label">Human demonstration</div>
+                                <video controls muted playsinline preload="metadata">
+                                    <source src="mp4_hand/Hang_the_right_mug_on_the_mug_holder.mp4" type="video/mp4">
+                                </video>
+                            </div>
+                            <div class="video-demo">
+                                <div class="video-label">Robot rollout</div>
+                                <video controls muted playsinline preload="metadata">
+                                    <source src="mp4/Hang_the_right_mug_on_the_mug_holder.mp4" type="video/mp4">
+                                </video>
+                            </div>
+                        </div>
+                        <figcaption><span class="task-index">Task 10</span> Hang the right mug on the mug holder</figcaption>
+                    </figure>
+                    <figure class="video-card video-pair-card">
+                        <div class="video-pair">
+                            <div class="video-demo">
+                                <div class="video-label">Human demonstration</div>
+                                <video controls muted playsinline preload="metadata">
+                                    <source src="mp4_hand/Stack_the_left_cup_onto_the_other_cup.mp4" type="video/mp4">
+                                </video>
+                            </div>
+                            <div class="video-demo">
+                                <div class="video-label">Robot rollout</div>
+                                <video controls muted playsinline preload="metadata">
+                                    <source src="mp4/Stack_the_left_cup_onto_the_other_cup.mp4" type="video/mp4">
+                                </video>
+                            </div>
+                        </div>
+                        <figcaption><span class="task-index">Task 11</span> Stack the left cup onto the other cup</figcaption>
+                    </figure>
+                    <figure class="video-card video-pair-card">
+                        <div class="video-pair">
+                            <div class="video-demo">
+                                <div class="video-label">Human demonstration</div>
+                                <video controls muted playsinline preload="metadata">
+                                    <source src="mp4_hand/Stack_the_right_cup_onto_the_other_cup.mp4" type="video/mp4">
+                                </video>
+                            </div>
+                            <div class="video-demo">
+                                <div class="video-label">Robot rollout</div>
+                                <video controls muted playsinline preload="metadata">
+                                    <source src="mp4/Stack_the_right_cup_onto_the_other_cup.mp4" type="video/mp4">
+                                </video>
+                            </div>
+                        </div>
+                        <figcaption><span class="task-index">Task 12</span> Stack the right cup onto the other cup</figcaption>
+                    </figure>
+                    <figure class="video-card video-pair-card">
+                        <div class="video-pair">
+                            <div class="video-demo">
+                                <div class="video-label">Human demonstration</div>
+                                <video controls muted playsinline preload="metadata">
+                                    <source src="mp4_hand/Insert_the_straw_into_cup.mp4" type="video/mp4">
+                                </video>
+                            </div>
+                            <div class="video-demo">
+                                <div class="video-label">Robot rollout</div>
+                                <video controls muted playsinline preload="metadata">
+                                    <source src="mp4/Insert_the_straw_into_cup.mp4" type="video/mp4">
+                                </video>
+                            </div>
+                        </div>
+                        <figcaption><span class="task-index">Task 13</span> Insert the straw into cup</figcaption>
+                    </figure>
+                    <figure class="video-card video-pair-card">
+                        <div class="video-pair">
+                            <div class="video-demo">
+                                <div class="video-label">Human demonstration</div>
+                                <video controls muted playsinline preload="metadata">
+                                    <source src="mp4_hand/Take_the_toast_from_the_toaster_and_put_it_on_a_plate.mp4" type="video/mp4">
+                                </video>
+                            </div>
+                            <div class="video-demo">
+                                <div class="video-label">Robot rollout</div>
+                                <video controls muted playsinline preload="metadata">
+                                    <source src="mp4/Take_the_toast_from_the_toaster_and_put_it_on_a_plate.mp4" type="video/mp4">
+                                </video>
+                            </div>
+                        </div>
+                        <figcaption><span class="task-index">Task 14</span> Take the toast from the toaster and put it on a plate</figcaption>
+                    </figure>
+                    <figure class="video-card video-pair-card">
+                        <div class="video-pair">
+                            <div class="video-demo">
+                                <div class="video-label">Human demonstration</div>
+                                <video controls muted playsinline preload="metadata">
+                                    <source src="mp4_hand/Unplug_the_charger.mp4" type="video/mp4">
+                                </video>
+                            </div>
+                            <div class="video-demo">
+                                <div class="video-label">Robot rollout</div>
+                                <video controls muted playsinline preload="metadata">
+                                    <source src="mp4/Unplug_the_charger.mp4" type="video/mp4">
+                                </video>
+                            </div>
+                        </div>
+                        <figcaption><span class="task-index">Task 15</span> Unplug the charger</figcaption>
+                    </figure>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="bridge" class="section">
+        <div class="container">
+            <h2 class="section-title">Bridging Action Visualization</h2>
+            <p class="section-sub narrow-block">
+                Given the same vision and language input, we ask the model to produce both the bridging action
+                <span class="mono">a<sup>3D-wrist</sup></span> and the 6DoF end-effector action
+                <span class="mono">a<sup>6D-eef</sup></span>, then project both onto the head camera. The two
+                align closely across diverse tasks, showing that the bridging action is a reliable proxy for
+                executable robot actions.
+            </p>
+            <div class="bridge-legend">
+                <span class="lg-wrist"><i></i>a<sup>3D-wrist</sup> (bridging action)</span>
+                <span class="lg-eef"><i></i>a<sup>6D-eef</sup> (end-effector action)</span>
+            </div>
+            <div class="carousel">
+                <button class="carousel-btn prev" aria-label="Previous">&#8249;</button>
+                <button class="carousel-btn next" aria-label="Next">&#8250;</button>
+                <div class="video-track">
+                    <figure class="video-card">
+                        <video controls muted playsinline preload="metadata"><source src="mp4_action_bridge_vis/Open_the_microwave_door.mp4" type="video/mp4"></video>
+                        <figcaption>Open the microwave door</figcaption>
+                    </figure>
+                    <figure class="video-card">
+                        <video controls muted playsinline preload="metadata"><source src="mp4_action_bridge_vis/Close_the_microwave_door.mp4" type="video/mp4"></video>
+                        <figcaption>Close the microwave door</figcaption>
+                    </figure>
+                    <figure class="video-card">
+                        <video controls muted playsinline preload="metadata"><source src="mp4_action_bridge_vis/Take_the_bowl_out_of_the_microwave.mp4" type="video/mp4"></video>
+                        <figcaption>Take the bowl out of the microwave</figcaption>
+                    </figure>
+                    <figure class="video-card">
+                        <video controls muted playsinline preload="metadata"><source src="mp4_action_bridge_vis/Wipe_the_microwave_top_from_left_to_right.mp4" type="video/mp4"></video>
+                        <figcaption>Wipe the microwave top from left to right</figcaption>
+                    </figure>
+                    <figure class="video-card">
+                        <video controls muted playsinline preload="metadata"><source src="mp4_action_bridge_vis/Open_the_drawer.mp4" type="video/mp4"></video>
+                        <figcaption>Open the drawer</figcaption>
+                    </figure>
+                    <figure class="video-card">
+                        <video controls muted playsinline preload="metadata"><source src="mp4_action_bridge_vis/Close_the_drawer.mp4" type="video/mp4"></video>
+                        <figcaption>Close the drawer</figcaption>
+                    </figure>
+                    <figure class="video-card">
+                        <video controls muted playsinline preload="metadata"><source src="mp4_action_bridge_vis/Hang_the_left_mug_on_the_mug_holder.mp4" type="video/mp4"></video>
+                        <figcaption>Hang the left mug on the mug holder</figcaption>
+                    </figure>
+                    <figure class="video-card">
+                        <video controls muted playsinline preload="metadata"><source src="mp4_action_bridge_vis/Stack_the_left_cup_onto_the_other_cup.mp4" type="video/mp4"></video>
+                        <figcaption>Stack the left cup onto the other cup</figcaption>
+                    </figure>
+                    <figure class="video-card">
+                        <video controls muted playsinline preload="metadata"><source src="mp4_action_bridge_vis/Unplug_the_charger.mp4" type="video/mp4"></video>
+                        <figcaption>Unplug the charger</figcaption>
+                    </figure>
+                    <figure class="video-card">
+                        <video controls muted playsinline preload="metadata"><source src="mp4_action_bridge_vis/Take_the_toast_from_the_toaster_and_put_it_on_a_plate.mp4" type="video/mp4"></video>
+                        <figcaption>Take the toast from the toaster and put it on a plate</figcaption>
+                    </figure>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="conclusion" class="section">
+        <div class="container narrow">
+            <h2 class="section-title">Conclusion</h2>
+            <p class="lead">
+                We investigate the feasibility of learning task-specific bi-manual robot skills from human motion data. We propose a
+                translation-based bridging action representation compatible with both robot and human action data, and introduce an
+                interleaved action sequence to address potentially missing action components. Experiments show that human action
+                co-training and human-only pre-training improve real-robot performance across the 15 evaluation tasks.
+            </p>
+            <div class="callout">
+                <b>Limitations.</b> Using only wrist translation limits transfer on tasks requiring rotational adjustments, and the
+                robot can struggle to pick thin objects after co-training, due to observation/embodiment gaps and inevitable noise in
+                human actions. Larger-scale, diverse robot actions can further narrow the human&ndash;robot domain gap.
+            </div>
+        </div>
+    </section>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2026 &middot; Translation-Only Human-to-Robot Skill Transfer. Project page for academic use.</p>
+            <p class="footer-sub">Website template inspired by clean, blue-and-white design conventions.</p>
+        </div>
+    </footer>
+
+    <script src="static/js/main.js"></script>
+</body>
+</html>
