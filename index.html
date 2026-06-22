@@ -79,17 +79,18 @@
         <div class="container narrow">
             <h2 class="section-title">Abstract</h2>
             <p class="lead">
-                We study whether we can learn novel manipulation skills from human actions to a bi-manual robot with parallel
-                grippers. Prior practices treat humans as another bi-manual 6DoF embodiment; however, they face two challenges:
-                hand-pose estimations are noisy, and the contact patterns of human fingers differ fundamentally from those of a
-                parallel gripper, making wrist rotation semantically misaligned with robot manipulation. We therefore propose a
-                <b>bridging action representation</b>, i.e., the relative wrist translation within the initial head-camera frame,
-                which is shared between humans and robots, to enable human to robot manipulation knowledge transfer. To handle the
-                potential absence of certain action components for different types of embodiments, we build a &pi;<sub>0</sub>-like
-                vision-language-action model with <b>interleaved action tokens</b>. On novel bi-manual manipulation tasks, we show
-                that our proposed bridging action can effectively transfer human manipulation knowledge to robots, <b>scale with
-                human action data</b>, and achieve non-zero success rates on certain tasks even without task-specific robot
-                demonstrations.
+                Human manipulation data is cheap, abundant, and diverse, making it one of the most promising resources 
+                for scaling up robot learning. Yet transferring skills from humans to robots remains hard: most prior 
+                work treats humans as just another bi-manual 6DoF embodiment, which suffers from two problems: hand-pose 
+                estimates are noisy, and the contact patterns of human fingers differ fundamentally from those of a parallel 
+                gripper, so that wrist rotation is semantically misaligned with gripper manipulation. We argue that learning
+                rotation-inclusive action signals from human data is therefore sub-optimal, and instead propose a 
+                <b>bridging action representation</b>: the relative wrist translation within the initial head-camera frame, 
+                an action space shared by humans and robots. To handle the potential absence of certain action components 
+                in different embodiments, we build a &pi;<sub>0</sub>-like vision-language-action model with 
+                <b>interleaved action tokens</b> and attention masking. On a suite of novel bi-manual manipulation tasks, 
+                our bridging action transfers human manipulation knowledge to robots far more effectively than noisy 6DoF 
+                human actions and scales with the amount of human data.
             </p>
             <div class="keywords">
                 <span class="chip">Imitation Learning</span>
